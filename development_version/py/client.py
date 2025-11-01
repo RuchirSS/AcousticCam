@@ -19,7 +19,7 @@ def processArgsGivenFreqs(argv):
 	micgeofile = argv[1]
 	datafile = argv[2]
 	imagefile = argv[3]
-	lower_freq = argv[4].replace(",", ".") 
+	lower_freq = argv[4].replace(",", ".")
 	higher_freq = argv[5].replace(",", ".")
 	z_dist = argv[6].replace(",", ".")
 	userThresh = argv[7].replace(",", ".")

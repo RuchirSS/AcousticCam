@@ -1,13 +1,14 @@
 from os import path 
+import acoular 
 import numpy as np
 import scipy.io
-import acoular 
 import sys
 import matplotlib.image as mpimg
 from PIL import Image
 from math import log, ceil, sqrt
-from pylab import figure, plot, axis, imshow, colorbar, show, draw, title, tight_layout
-from matplotlib import pyplot as plt
+import matplotlib.pyplot as plt
+from matplotlib.pyplot import figure, plot, axis, imshow, colorbar, show, draw, title, tight_layout
+
 
 def coreBeamForm(micgeofile, datafile, imagefile, center_freq, inv_bandwidth, lower_freq, higher_freq, z_dist, userThresh=2):
 	
@@ -15,11 +16,11 @@ def coreBeamForm(micgeofile, datafile, imagefile, center_freq, inv_bandwidth, lo
 	print("Center: %.3f Hz || n: %.3f" % (center_freq, inv_bandwidth))
 
 	#ts = acoular.TimeSamples(name=datafile)
-	ts = acoular.MaskedTimeSamples(name=datafile)
+	ts = acoular.MaskedTimeSamples(file=datafile)
 
 	# Calibration factors (in Pa/V)
 	# assuming input data is in V, this will convert data to Pa, and scale it according to calibration
-	ts.calib = acoular.Calib(from_file="../xml/ECM8000_07_09_19_01.xml") # NEW 
+	# ts.calib = acoular.Calib(file='development_version/xml/ECM8000_07_09_19_01.xml') # NEW 
 	#invalid = [5,6,7,8]
 	#invalid = [3,4, 7,8, 11,12, 15,16] # list of invalid channels (unwanted microphones etc.)
 	invalid = []
@@ -27,13 +28,13 @@ def coreBeamForm(micgeofile, datafile, imagefile, center_freq, inv_bandwidth, lo
 	
 	ts.invalid_channels = invalid 
 
-	ps = acoular.PowerSpectra(time_data=ts, block_size=1024 , window='Hanning')
+	ps = acoular.PowerSpectra(source=ts, block_size=1024 , window='Hanning')
 
 	# Load and crop camera image
 	im = Image.open(imagefile)
 	width, height = im.size   # Get dimensions 
 	new_width = 720
-	new_height = 720#303  
+	new_height = 720 #303  
 	left = (width - new_width)/2
 	top = (height - new_height)/2
 	right = (width + new_width)/2
@@ -48,11 +49,11 @@ def coreBeamForm(micgeofile, datafile, imagefile, center_freq, inv_bandwidth, lo
 	#rg = acoular.RectGrid(x_min=-0.2, x_max=0.2, y_min=-0.2, y_max=0.2, z=z_dist,
 	#                     increment=0.01) 
 
-	mg = acoular.MicGeom(from_file=micgeofile)
+	mg = acoular.MicGeom(file=micgeofile)
 	mg.invalid_channels = invalid
 
 	env = acoular.Environment(c = 346.04)
-	st = acoular.SteeringVector( grid = rg, mics=mg, env=env) # sound propagation model
+	st = acoular.SteeringVector(grid = rg, mics=mg, env=env) # sound propagation model
  
 	bb = acoular.BeamformerBase(freq_data=ps, steer=st)
 	#bb = acoular.fbeamform.BeamformerFunctional(freq_data=ps, steer=st, gamma=20, cached=True) 
@@ -61,7 +62,7 @@ def coreBeamForm(micgeofile, datafile, imagefile, center_freq, inv_bandwidth, lo
 	Lm = acoular.L_p(pm) # convert to decibels 
 
 	# load camera image to plot it 
-	imshow(im, extent=rg.extend())
+	imshow(im, extent=rg.extent)
 	plt.xlabel('[m]')
 	plt.ylabel('[m]', rotation=0)
 	plt.grid(True, alpha=0.2)
@@ -76,7 +77,7 @@ def coreBeamForm(micgeofile, datafile, imagefile, center_freq, inv_bandwidth, lo
 
 	minMapValue = maxSPL-userThresh 
 	# plot intensities
-	imshow(Lm.T, origin='lower', vmin=minMapValue, vmax=maxSPL, extent=rg.extend(),
+	imshow(Lm.T, origin='lower', vmin=minMapValue, vmax=maxSPL, extent=rg.extent,
 				interpolation='bicubic', alpha=0.5, cmap='nipy_spectral') 
 
 	# colorbar formatting 
@@ -96,6 +97,7 @@ def coreBeamForm(micgeofile, datafile, imagefile, center_freq, inv_bandwidth, lo
 	#axis('equal')
 
 	draw() 
+	print("yay")
 
 def doBeamformingCenterFreq(args):  
 	micgeofile = args[0]
@@ -125,3 +127,12 @@ def doBeamformingGivenFreqs(args):
 
 	coreBeamForm(micgeofile, datafile, imagefile, center_freq, inv_bandwidth, lower_freq, higher_freq, z_dist, userThresh)
  
+
+if __name__ == "__main__":
+	# mic geom, data file, image file, lower freq, higher freq, z dist, user thresh
+	sample_args = ['development_version/xml/16_mics_geom.xml',
+				   'development_version/xml/16_mics_generated_audio.h5',
+				   'development_version/xml/test_image.bmp',
+				   2000, 3000, 0.3, 2]  
+	
+	doBeamformingGivenFreqs(sample_args)

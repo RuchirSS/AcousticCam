@@ -21,7 +21,7 @@ Source Location        Level
 """
 import sys
 from os import path
-from acoular import __file__ as bpath, td_dir, MicGeom, WNoiseGenerator, PointSource, Mixer, WriteH5
+from acoular import __file__ as bpath, MicGeom, WNoiseGenerator, PointSource, Mixer, WriteH5
 
 if len(sys.argv) > 1:
     channels = int(sys.argv[1])
@@ -46,16 +46,16 @@ elif channels == 30:
     h5savefile = '../data/examples/30_mics_samples.h5'
 '''
 
-micgeofile = '../data/xml/uma16.xml'
-h5savefile = '../data/examples/3s_uma_16.h5'
+micgeofile = 'development_version/xml/16_mics_geom.xml'
+h5savefile = 'development_version/xml/16_mics_generated_audio.h5'
 
-m = MicGeom(from_file=micgeofile)
-n1 = WNoiseGenerator(sample_freq=sfreq, numsamples=nsamples, seed=1)
-n2 = WNoiseGenerator(sample_freq=sfreq, numsamples=nsamples, seed=2, rms=0.7)
-n3 = WNoiseGenerator(sample_freq=sfreq, numsamples=nsamples, seed=3, rms=0.5)
-p1 = PointSource(signal=n1, mpos=m,  loc=(-0.1, -0.1, 0.3))
-p2 = PointSource(signal=n2, mpos=m,  loc=(0.1, 0, 0.3))
-p3 = PointSource(signal=n3, mpos=m,  loc=(0, 0.1, 0.3))
+m = MicGeom(file=micgeofile)
+n1 = WNoiseGenerator(sample_freq=sfreq, num_samples=nsamples, seed=1)
+n2 = WNoiseGenerator(sample_freq=sfreq, num_samples=nsamples, seed=2, rms=0.7)
+n3 = WNoiseGenerator(sample_freq=sfreq, num_samples=nsamples, seed=3, rms=0.5)
+p1 = PointSource(signal=n1, mics=m,  loc=(-0.1, -0.1, 0.3))
+p2 = PointSource(signal=n2, mics=m,  loc=(0.1, 0, 0.3))
+p3 = PointSource(signal=n3, mics=m,  loc=(0, 0.1, 0.3))
 p = Mixer(source=p1, sources=[p2, p3])
-wh5 = WriteH5(source=p, name=h5savefile)
+wh5 = WriteH5(source=p, file=h5savefile)
 wh5.save()
